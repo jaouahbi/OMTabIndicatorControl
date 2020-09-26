@@ -53,7 +53,6 @@ extension UIColor {
         let brightness = ((components[0] * 299) + (components[1] * 587) + (components[2] * 114)) / 1000
         return !(brightness < 0.5)
     }
-    
     public var complementaryColor: UIColor {
         if #available(iOS 13, tvOS 13, *) {
             return UIColor { traitCollection in
@@ -89,6 +88,74 @@ extension UIColor {
     }
 }
 
+// https://stackoverflow.com/questions/37055755/computing-complementary-triadic-tetradic-and-analagous-colors
+extension UIColor {
+    var splitComplement: [UIColor] {
+        return [splitComplement0, splitComplement1]
+    }
+    var triadic: [UIColor] {
+        return [triadic0, triadic1]
+    }
+    var tetradic: [UIColor] {
+        return [tetradic0, tetradic1, tetradic2]
+    }
+    var analagous: [UIColor] {
+        return [analagous0, analagous1]
+    }
+    var complement: UIColor {
+        return self.withHueOffset(0.5)
+    }
+    var splitComplement0: UIColor {
+        return self.withHueOffset(150 / 360)
+    }
+    var splitComplement1: UIColor {
+        return self.withHueOffset(210 / 360)
+    }
+    var triadic0: UIColor {
+        return self.withHueOffset(120 / 360)
+    }
+    var triadic1: UIColor {
+        return self.withHueOffset(240 / 360)
+    }
+    var tetradic0: UIColor {
+        return self.withHueOffset(0.25)
+    }
+    var tetradic1: UIColor {
+        return self.complement
+    }
+    var tetradic2: UIColor {
+        return self.withHueOffset(0.75)
+    }
+    var analagous0: UIColor {
+        return self.withHueOffset(-1 / 12)
+    }
+    var analagous1: UIColor {
+        return self.withHueOffset(1 / 12)
+    }
+    func withHueOffset(_ offset: CGFloat) -> UIColor {
+        var h: CGFloat = 0
+        var s: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 0
+        self.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return UIColor(hue: fmod(h + offset, 1), saturation: s, brightness: b, alpha: a)
+    }
+}
+
+extension UIColor {
+    // get a complementary color to this color:
+    static func complementaryForColor(_ color: UIColor) -> UIColor {
+        let ciColor = CIColor(color: color)
+        // get the current values and make the difference from white:
+        let compRed: CGFloat = 1.0 - ciColor.red
+        let compGreen: CGFloat = 1.0 - ciColor.green
+        let compBlue: CGFloat = 1.0 - ciColor.blue
+        return UIColor(red: compRed,
+                       green: compGreen,
+                       blue: compBlue,
+                       alpha: 1.0)
+    }
+}
 public extension UIColor {
     static var greenSea     = UIColor(0x16a085)
     static var turquoise    = UIColor(0x1abc9c)
@@ -321,6 +388,34 @@ public extension CALayer {
     }
 }
 
+extension CALayer {
+    var image: CGImage? {
+        let width = Int(frame.size.width)
+        let height = Int(frame.size.height)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bytesPerPixel = 4
+        let bytesPerRow = bytesPerPixel * width
+        let rawData = malloc(height * bytesPerRow)
+        let bitsPerComponent = 8
+        guard let context = CGContext(data: rawData,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: bitsPerComponent,
+                                      bytesPerRow: bytesPerRow,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else {
+                        return nil
+        }
+        // Before you render the layer check if the layer turned over.
+        if contentsAreFlipped() {
+            let flipVertical = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: frame.size.height)
+            context.concatenate(flipVertical)
+        }
+        render(in: context)
+        return context.makeImage()
+    }
+}
+
 typealias GradientColors = (UIColor, UIColor)
 
  extension CAShapeLayer {
@@ -339,6 +434,8 @@ typealias GradientColors = (UIColor, UIColor)
         self.mask = maskLayer
     }
 }
+
+
 
 // Layer with clip path
 class OMShapeLayerClipPath: CAShapeLayer {
@@ -510,11 +607,29 @@ func CreateVerticalGradientImage( gradient: CGGradient,
     return gradientImage;
 }
 
-func CreateVerticalGrayGradient( minGray:CGFloat, maxGray:CGFloat) -> CGGradient?
+func CreateVerticalGrayGradient( minGray: CGFloat, maxGray: CGFloat) -> CGGradient?
 {
     let minGrayColorRef = UIColor(white: minGray, alpha: 1.0);
     let maxGrayColorRef = UIColor(white: maxGray, alpha: 1.0)
     let colorSpace = CGColorSpaceCreateDeviceGray();
     let gradient = CGGradient(colorsSpace: colorSpace, colors: [minGrayColorRef, maxGrayColorRef] as CFArray, locations: nil)
     return gradient
+}
+
+extension CGAffineTransform {
+     func shear(_ xShear: CGFloat, yShear: CGFloat) -> CGAffineTransform {
+        var transform = self
+        transform.c = -xShear
+        transform.b = yShear
+        return transform
+    }
+    static func shearX(_ xShear: CGFloat = 0.3) -> CGAffineTransform  {
+       return CGAffineTransform(a: 1, b: 0, c: xShear, d: 1, tx: 0, ty: 0)
+    }
+    static func shearY(_ yShear: CGFloat = 0.3) -> CGAffineTransform  {
+       return CGAffineTransform(a: 1, b: yShear, c: 0, d: 1, tx: 0, ty: 0)
+    }
+    static func shear( xShear: CGFloat,  yShear: CGFloat) -> CGAffineTransform {
+        return CGAffineTransform(a: 1, b: yShear, c: xShear, d: 1, tx: 0, ty: 0);
+    }
 }

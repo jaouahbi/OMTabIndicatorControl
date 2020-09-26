@@ -14,7 +14,8 @@
 		D1992B1B251E0B230089606A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1992B14251E0B230089606A /* AppDelegate.swift */; };
 		D1992B1D251E0B230089606A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1992B16251E0B230089606A /* SceneDelegate.swift */; };
 		D1992B22251E0BA00089606A /* OMControlHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1992B20251E0BA00089606A /* OMControlHelper.swift */; };
-		D1992B24251E0C6B0089606A /* OMTabIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1992B23251E0C6B0089606A /* OMTabIndicatorView.swift */; };
+		D1992B24251E0C6B0089606A /* OMTabIndicatorControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1992B23251E0C6B0089606A /* OMTabIndicatorControl.swift */; };
+		D1C30B44251F8B2100196AC1 /* UITableView+LayoutHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C30B43251F8B2100196AC1 /* UITableView+LayoutHeader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +28,8 @@
 		D1992B15251E0B230089606A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D1992B16251E0B230089606A /* SceneDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		D1992B20251E0BA00089606A /* OMControlHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OMControlHelper.swift; sourceTree = "<group>"; };
-		D1992B23251E0C6B0089606A /* OMTabIndicatorView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OMTabIndicatorView.swift; sourceTree = "<group>"; };
+		D1992B23251E0C6B0089606A /* OMTabIndicatorControl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OMTabIndicatorControl.swift; sourceTree = "<group>"; };
+		D1C30B43251F8B2100196AC1 /* UITableView+LayoutHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableView+LayoutHeader.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,8 +77,9 @@
 		D1992B1E251E0BA00089606A /* OMTabIndicatorView */ = {
 			isa = PBXGroup;
 			children = (
-				D1992B23251E0C6B0089606A /* OMTabIndicatorView.swift */,
+				D1992B23251E0C6B0089606A /* OMTabIndicatorControl.swift */,
 				D1992B20251E0BA00089606A /* OMControlHelper.swift */,
+				D1C30B43251F8B2100196AC1 /* UITableView+LayoutHeader.swift */,
 			);
 			name = OMTabIndicatorView;
 			path = ../../OMTabIndicatorView;
@@ -155,9 +158,10 @@
 			files = (
 				D1992B1B251E0B230089606A /* AppDelegate.swift in Sources */,
 				D1992B17251E0B230089606A /* ViewController.swift in Sources */,
+				D1C30B44251F8B2100196AC1 /* UITableView+LayoutHeader.swift in Sources */,
 				D1992B22251E0BA00089606A /* OMControlHelper.swift in Sources */,
 				D1992B1D251E0B230089606A /* SceneDelegate.swift in Sources */,
-				D1992B24251E0C6B0089606A /* OMTabIndicatorView.swift in Sources */,
+				D1992B24251E0C6B0089606A /* OMTabIndicatorControl.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

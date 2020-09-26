@@ -1,5 +1,5 @@
 import UIKit
-class ViewController: UIViewController, OMTabIndicatorViewDelegate {
+class ViewController: UIViewController, OMTabIndicatorControlDelegate {
     func willSelectedItem(at index: Int) {
     }
     func willSelecteItemAtIndex(at index: Int) {
@@ -15,22 +15,32 @@ class ViewController: UIViewController, OMTabIndicatorViewDelegate {
         }
     }
     @IBOutlet var table: UITableView!
-    let items = ["TabIndicator Item 1", "TabIndicator Item 2", "TabIndicator Item 3"]
+    let items: [String] = ["TabIndicator Item 1",
+                           "TabIndicator Item 2",
+                           "TabIndicator Item 3"]
     override func viewDidLoad() {
         super.viewDidLoad()
     }
-    var headerHeight: CGFloat = 35
+    let headerHeight: CGFloat = 35
     var estimatedSegmentedControlFrame: CGRect {
         return CGRect(x: 0,
                       y: 0,
                       width: self.table.bounds.width,
                       height: headerHeight)
     }
-    var tabIndicator: OMTabIndicatorView!
+    var tabIndicator: OMTabIndicatorControl!
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        tabIndicator = OMTabIndicatorView(items, frame: estimatedSegmentedControlFrame)
+        tabIndicator = OMTabIndicatorControl(items, frame: estimatedSegmentedControlFrame)
         tabIndicator.frame = estimatedSegmentedControlFrame
+        let unselFont = UIFont(name: "Avenir-light", size: 11.5)
+        let  selFont  =  UIFont(name: "Avenir-Heavy", size: 12.0)
+        if let selFont = selFont {
+            tabIndicator.selectedTextFont = selFont
+        }
+        if let unselFont = unselFont {
+            tabIndicator.unselectedTextFont  = unselFont
+        }
         table.estimatedSectionHeaderHeight = headerHeight
         table.sectionHeaderHeight = headerHeight
         tabIndicator.delegate = self
