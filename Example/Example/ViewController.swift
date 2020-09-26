@@ -1,22 +1,21 @@
 import UIKit
 class ViewController: UIViewController, OMTabIndicatorViewDelegate {
-    func didSelectItem(at index: Int) {
+    func willSelectedItem(at index: Int) {
+    }
+    func willSelecteItemAtIndex(at index: Int) {
+    }
+    func didSelectedItem(at index: Int) {
         let alert = UIAlertController(title: "Selection Change",
                                       message: "\(index) selected", preferredStyle: .alert)
-        
-        let action = UIAlertAction(title: "OK", style: .cancel) { (action) in
-            alert.addAction(action)
+        present(alert, animated: true) {
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             alert.dismiss(animated: true) {
-                
             }
         }
-        present(alert, animated: true) {
-            
-        }
     }
-    
     @IBOutlet var table: UITableView!
-    let items = ["Composición", "Últimos Movimientos"]
+    let items = ["TabIndicator Item 1", "TabIndicator Item 2", "TabIndicator Item 3"]
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -37,19 +36,10 @@ class ViewController: UIViewController, OMTabIndicatorViewDelegate {
         tabIndicator.delegate = self
         self.table.setTableHeaderView(headerView: tabIndicator, size: estimatedSegmentedControlFrame.size)
         view.setNeedsLayout()
-        
-        //        tabIndicator.translatesAutoresizingMaskIntoConstraints = false
-        //        tabIndicator.trailingAnchor.constraint(equalTo: table.trailingAnchor, constant: 0).isActive = true
-        //        tabIndicator.leadingAnchor.constraint(equalTo: table.leadingAnchor, constant: 0).isActive = true
-        //        tabIndicator.topAnchor.constraint(equalTo: table.topAnchor, constant: 0).isActive = true
-        //        //view.bottomAnchor.constraint(equalTo: tabIndicator.bottomAnchor, constant: 0).isActive = true
-        //        tabIndicator.topAnchor.constraint(equalTo: table.safeAreaLayoutGuide.topAnchor).isActive = true
-        //        tabIndicator.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        
     }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // 2. Reflect the latest size in tableHeaderView
+        // Reflect the latest size in tableHeaderView
         if self.table.shouldUpdateHeaderViewFrame() {
             // **This is where table view's content (tableHeaderView, section headers, cells)
             // frames are updated to account for the new table header size.

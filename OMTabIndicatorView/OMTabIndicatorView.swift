@@ -4,6 +4,7 @@ extension UITableView {
     func setTableHeaderView(headerView: UIView, size: CGSize) {
         headerView.translatesAutoresizingMaskIntoConstraints = false
         self.tableHeaderView = headerView
+      
         // ** Must setup AutoLayout after set tableHeaderView.
         headerView.widthAnchor.constraint(equalTo: self.widthAnchor).isActive = true
         headerView.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
@@ -21,6 +22,8 @@ extension UITableView {
     }
 }
 
+
+
 extension UIView {
     func shear(_ shearValue: CGFloat = 0.3) {
         let shearTransform = CGAffineTransform(a: 1, b: 0, c: shearValue, d: 1, tx: 0, ty: 0)
@@ -37,7 +40,8 @@ extension UIView {
     }
 }
 protocol OMTabIndicatorViewDelegate: class {
-    func didSelectItem(at index: Int)
+    func didSelectedItem(at index: Int)
+    func willSelectedItem(at index: Int)
 }
 final class OMTabIndicatorView: UIView {
     // MARK: Init and deinit
@@ -59,24 +63,34 @@ final class OMTabIndicatorView: UIView {
     }
     // MARK: UI
     private let contentStackView = UIStackView()
-    var selectionMarkerView: UIView = UIView()
-    private let lineView = UIView()
-    var unselectedTextColor: UIColor {
-        return selectedTextColor.complementaryColor
-    }
-    var selectedTextColor: UIColor  = UIColor.blue.lighter
-    var markerGradientColor: UIColor = .darkClouds
-    var lineGradientColor: UIColor = UIColor.blue.darker
-    var selectedLineColor: UIColor  = UIColor.blue.withAlphaComponent(0.8)
-    var markerColor: CGColor = UIColor.silver.withAlphaComponent(0.7).cgColor
-    //var lineColor: CGColor = UIColor.navyTwo.withAlphaComponent(0.7).cgColor
-    var selectedTextFont: UIFont = UIFont.boldSystemFont(ofSize: 13)
-    var unselectedTextFont: UIFont = UIFont.systemFont(ofSize: 13, weight: .light)
-    var animationDuration: TimeInterval = 0.5
+    var selectionMarker: UIView = UIView()
+    private let selectionLine = UIView()
+    private let line = UIView()
+    var fadeGradientMask: CAGradientLayer?
+    var isShadowImage: Bool = true
+    var isAnimatable: Bool = false
+    var isVertical: Bool = true
     
+    var glossGradientColor: UIColor  = .paleGreyThree
+//    var shadowGradientColor: UIColor = .yellow
+    var lineGradientColor: UIColor  = .greyishBlue
+    var fadeGradientColor: UIColor  = .paleGreyTwo
+    var selectedTextColor: UIColor  = .navyThree
+    var selectedLineColor: UIColor  = .navyThree
+    var markerColor: UIColor = .silver
+    
+    var selectedTextFont: UIFont = UIFont.boldSystemFont(ofSize: 13)
+    var unselectedTextColor: UIColor  {return .greyishBlue }
+ 
+    var unselectedTextFont: UIFont = UIFont.systemFont(ofSize: 12.5, weight: .regular)
+    var unselectedLineColor: UIColor  {return .navyTwo }
+    
+    
+    var animationDuration: TimeInterval = 0.5
+    var shearAffineTransform: CGAffineTransform = shearTransform(CGAffineTransform(scaleX: 1.1, y: 1), x: 0.5, y: 0)
     var touchDownTransform: CGAffineTransform = CGAffineTransform(scaleX: 1.0, y: 1.2)
     var touchUpTransform: CGAffineTransform = CGAffineTransform(scaleX: 0.8, y: 0.7)
-    var lineMarkHeight: CGFloat = 2
+    var lineMarkHeight: CGFloat = 3
     
     // MARK: Functions
     private func configure(with items: [String]) {
@@ -93,12 +107,14 @@ final class OMTabIndicatorView: UIView {
             
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapTabItem))
             label.addGestureRecognizer(tapGesture)
-            
             return label
         }
+
         configureStackView()
         setupSelectionView()
         selectedItemIndex = 0
+        self.backgroundColor = .clouds
+        
     }
     private func configureStackView() {
         addSubview(contentStackView)
@@ -107,88 +123,148 @@ final class OMTabIndicatorView: UIView {
         contentStackView.distribution = .fillEqually
         itemLabels.forEach { contentStackView.addArrangedSubview($0) }
     }
-    var markerGradientColors: [CGColor] {
-        return markerGradientColor.makeGradient().enumerated().map{$1.withAlphaComponent($0 == 0 ? 1.0 : 0.1).cgColor}
+    var fadeGardientColors: [CGColor] {
+        return [fadeGradientColor.withAlphaComponent(1.0).cgColor,
+                fadeGradientColor.withAlphaComponent(0.0).cgColor]
     }
+//    private lazy var shadowGradientLayer: CAGradientLayer = {
+//        // Create the gradient layer
+//        let gradientLayer = CAGradientLayer()
+//        gradientLayer.colors = shadowGradientColors
+//        self.layer.insertSublayer(gradientLayer, at:0)
+//        return gradientLayer
+//    }()
     var lineGradientColors: [CGColor] {
         let gradient = lineGradientColor.makeGradient()
         return gradient.enumerated().map{$1.withAlphaComponent($0 == 0 ? 0.1 : 1.0).cgColor}
     }
-    private lazy var markerGradientLayer: CAGradientLayer = {
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.startPoint = isVertical ? CGPoint(x: 0.5, y: 0.0) : CGPoint(x: 0.0, y: 0.5)
-        gradientLayer.endPoint   = isVertical ? CGPoint(x: 0.5, y: 1.0) : CGPoint(x: 1.0, y: 0.5)
-        gradientLayer.colors     = markerGradientColors.map({UIColor(cgColor: $0).complementaryColor.lighter.cgColor})
-        selectionMarkerView.layer.addSublayer(gradientLayer)
-        return gradientLayer
-    }()
     private lazy var lineMarkerGradientLayer: CAGradientLayer = {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.startPoint = isVertical ? CGPoint(x: 0.5, y: 0.0) : CGPoint(x: 0.0, y: 0.5)
-        gradientLayer.endPoint = isVertical ? CGPoint(x: 0.5, y: 1.0) : CGPoint(x: 1.0, y: 0.5)
-        gradientLayer.colors = lineGradientColors.map({UIColor(cgColor: $0).complementaryColor.lighter.cgColor})
-        lineView.layer.addSublayer(gradientLayer)
+        gradientLayer.colors = lineGradientColors
+        selectionLine.layer.insertSublayer(gradientLayer, at:0)
         return gradientLayer
     }()
-    var isAnimatable: Bool = false
-    var isVertical: Bool = true
+//    var shadowGradientColors: [CGColor] {
+//        var red: CGFloat = 0,
+//        green: CGFloat = 0,
+//        blue: CGFloat = 0,
+//        alpha: CGFloat = 0
+//        var componentsShadowGradient: [UIColor] = [UIColor.black.withAlphaComponent(0.0),
+//                                                   UIColor.black.withAlphaComponent(0.6)]
+//        if shadowGradientColor.getRed(&red,
+//                           green: &green,
+//                           blue: &blue,
+//                           alpha: &alpha) {
+//            componentsShadowGradient = [UIColor(red: red, green:green, blue:blue, alpha: 0),
+//                                        UIColor(red: red, green:green, blue:blue, alpha: 0.6)]
+//
+//        }
+//        return componentsShadowGradient.map{$0.cgColor}
+//    }
+    var glossGradientColors: [CGColor] {
+        let gradient =  [glossGradientColor.withAlphaComponent(0.35),
+                          glossGradientColor.withAlphaComponent(0.06)]
+        return gradient.map{$0.cgColor}
+    }
+    private lazy var markerGlossLayer: CAGradientLayer = {
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.colors = glossGradientColors
+        selectionMarker.layer.addSublayer(gradientLayer)
+        return gradientLayer
+    }()
+    
+    private lazy var markerClipGlossLayer: OMShapeLayerClipPath = {
+        let gradientLayer = OMShapeLayerClipPath()
+        markerGlossLayer.mask = gradientLayer
+        return gradientLayer
+    }()
+    
+    var fadePercent: CGFloat = 0.2
+    fileprivate func renderGloss() {
+        markerGlossLayer.colors      = glossGradientColors
+        markerGlossLayer.frame       = CGRect(origin: .zero, size:CGSize( width: selectionMarker.frame.width,
+                                                                          height: selectionMarker.frame.height / 2))
+        markerGlossLayer.startPoint  = CGPoint(x: selectionMarker.frame.minX, y: selectionMarker.frame.maxY)
+        markerGlossLayer.endPoint    = CGPoint(x: selectionMarker.frame.minX, y: selectionMarker.frame.maxY)
+        let clipRect = markerGlossLayer.bounds
+        markerClipGlossLayer.path = UIBezierPath(rect: clipRect).cgPath
+    }
+//    fileprivate func renderShadow() {
+//        shadowGradientLayer.colors          = lineGradientColors
+//        shadowGradientLayer.frame           = bounds
+//        shadowGradientLayer.locations       = [0.0 ,0.1]
+//        shadowGradientLayer.startPoint      = shadowGradientLayer.frame.origin
+//        shadowGradientLayer.endPoint        = CGPoint(x: shadowGradientLayer.frame.maxX,y: shadowGradientLayer.frame.maxY)
+//    }
+    fileprivate func renderLine() {
+        lineMarkerGradientLayer.colors    = lineGradientColors
+        lineMarkerGradientLayer.locations = [0.0 ,0.1, 1.0]
+        lineMarkerGradientLayer.frame     = self.selectionLine.bounds
+    }
     override func layoutSubviews() {
         super.layoutSubviews()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        markerGradientLayer.colors    = markerGradientColors
-        markerGradientLayer.locations = [0.0 ,0.9, 1.0]
-        markerGradientLayer.frame     = self.selectionMarkerView.bounds
+     
+        renderLine()
+        renderGloss()
+//        renderShadow()
+//
+//        fadeGradientMask = selectionMarker.layer.applyFadeGradient(colors: fadeGardientColors,
+//                                                                   fadePercent: fadePercent)
         
-        lineMarkerGradientLayer.colors = lineGradientColors
-        lineMarkerGradientLayer.locations = [0.0 ,0.9, 1.0]
-        lineMarkerGradientLayer.frame = self.lineView.bounds
         CATransaction.commit()
     }
-    var swearTransform: CGAffineTransform = shearTransform(CGAffineTransform(scaleX: 1.1, y: 1), x: 0.5, y: 0)
-    var tabSelectionLeftAnchor: NSLayoutConstraint!
-    var tabSelectionRightAnchor: NSLayoutConstraint!
+    
+    var lineMargin: CGFloat = 20
     private func setupSelectionView() {
-        addSubview(selectionMarkerView)
-        addSubview(lineView)
-        lineView.layer.cornerRadius    = 1
-        lineView.layer.masksToBounds   = false
-        selectionMarkerView.isHidden = true
+        addSubview(selectionMarker)
+        addSubview(selectionLine)
+        addSubview(line)
+        selectionLine.layer.cornerRadius    = lineMarkHeight / 2
+        selectionLine.layer.masksToBounds   = false
+        //selectionMarker.isHidden = true
         if let itemLabel = itemLabels.first {
-            
-            selectionMarkerView.translatesAutoresizingMaskIntoConstraints = false
-            selectionMarkerView.topAnchor.constraint(equalTo: self.topAnchor, constant: 0).isActive = true
-            selectionMarkerView.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: 0).isActive = true
-            itemLabel.leftAnchor.constraint(equalTo: selectionMarkerView.leftAnchor, constant: 0).isActive  = true
-            itemLabel.rightAnchor.constraint(equalTo: selectionMarkerView.rightAnchor, constant: 0).isActive  = true
-            
-            
-            lineView.translatesAutoresizingMaskIntoConstraints = false
-            lineView.leftAnchor.constraint(equalTo: selectionMarkerView.leftAnchor, constant: 0).isActive = true
-            lineView.rightAnchor.constraint(equalTo: selectionMarkerView.rightAnchor, constant: 0).isActive = true
-            //lineView.topAnchor.constraint(equalTo: itemLabel.topAnchor, constant: 0).isActive = false
-            lineView.bottomAnchor.constraint(equalTo: selectionMarkerView.bottomAnchor, constant: 0).isActive = true
-            lineView.fixedAnchorSize(width: selectionMarkerView.bounds.width, height: lineMarkHeight)
-            
+            selectionMarker.translatesAutoresizingMaskIntoConstraints = false
+            selectionMarker.topAnchor.constraint(equalTo: self.topAnchor, constant: 0).isActive = true
+            selectionMarker.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: 0).isActive = true
+            itemLabel.leftAnchor.constraint(equalTo: selectionMarker.leftAnchor, constant: 0).isActive  = true
+            itemLabel.rightAnchor.constraint(equalTo: selectionMarker.rightAnchor, constant: 0).isActive  = true
+
+           selectionLine.translatesAutoresizingMaskIntoConstraints = false
+           selectionLine.leftAnchor.constraint(equalTo: selectionMarker.leftAnchor, constant: 0).isActive = true
+           selectionLine.rightAnchor.constraint(equalTo: selectionMarker.rightAnchor, constant: 0).isActive = true
+           selectionLine.bottomAnchor.constraint(equalTo: selectionMarker.bottomAnchor, constant: 0).isActive = true
+           selectionLine.fixedAnchorSize(width: 0, height: lineMarkHeight)
+
+           line.translatesAutoresizingMaskIntoConstraints = false
+           line.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 0).isActive = true
+           line.rightAnchor.constraint(equalTo: self.rightAnchor, constant: 0).isActive = true
+           line.bottomAnchor.constraint(equalTo: self.bottomAnchor, constant: 0).isActive = true
+           line.fixedAnchorSize(width: 0, height: lineMarkHeight)
         }
-        sendSubviewToBack(selectionMarkerView)
-        //selectionMarkerView.layer.backgroundColor = markerColor
-        sendSubviewToBack(lineView)
-        //lineView.layer.backgroundColor = selectedLineColor.cgColor
-        
+        sendSubviewToBack(selectionMarker)
+        selectionMarker.backgroundColor = .clear
+        sendSubviewToBack(selectionLine)
+        selectionLine.layer.backgroundColor = selectedLineColor.cgColor
+        sendSubviewToBack(line)
+        line.layer.backgroundColor = unselectedLineColor.cgColor
         self.layoutIfNeeded()
         
-        let markHeight: CGFloat = selectionMarkerView.bounds.size.height - lineMarkHeight
-        let selectionSize = CGSize(width: selectionMarkerView.bounds.size.width, height: markHeight)
-        let shadowEdgeMask: UInt = UInt( CGRectEdge.maxXEdge.rawValue |
-                                         CGRectEdge.maxYEdge.rawValue |
-                                         CGRectEdge.minXEdge.rawValue)
-        
-        if let shadowImage = UIControlHelper.createShadowImageWithSize(size: selectionSize,
-                                                                       shadowRadius: 20,
-                                                                       shadowEdgeMask: shadowEdgeMask,
-                                                                       color: UIColor(cgColor: markerColor)) {
-            selectionMarkerView.backgroundColor = UIColor(patternImage: UIImage(cgImage: shadowImage))
+        if isShadowImage {
+            let markHeight: CGFloat = selectionMarker.bounds.size.height - lineMarkHeight
+            let selectionSize = CGSize(width: selectionMarker.bounds.size.width, height: markHeight)
+            let shadowEdgeMask: UInt = UInt( CGRectEdge.maxXEdge.rawValue |
+                CGRectEdge.maxYEdge.rawValue |
+                CGRectEdge.minXEdge.rawValue |
+                CGRectEdge.minYEdge.rawValue)
+            if let shadowImage = OMControlHelper.createShadowImage(with: selectionSize,
+                                                                    shadowRadius: 20,
+                                                                    shadowEdgeMask: shadowEdgeMask,
+                                                                    color: markerColor) {
+                selectionMarker.backgroundColor = UIColor(patternImage: UIImage(cgImage: shadowImage))
+                //selectionMarker.transform = self.shearAffineTransform
+            }
         }
     }
     class private func shearTransform(_ transform: CGAffineTransform, x: CGFloat, y: CGFloat) -> CGAffineTransform {
@@ -200,11 +276,12 @@ final class OMTabIndicatorView: UIView {
     @objc private func didTapTabItem(_ tapGesture: UITapGestureRecognizer) {
         if let view = tapGesture.view {
             selectedItemIndex = view.tag
-            delegate?.didSelectItem(at: selectedItemIndex)
+            delegate?.didSelectedItem(at: selectedItemIndex)
         }
     }
     func willSelecteItemAtIndex( at index: Int) {
-        itemLabels.forEach(resetFontOnLabel)
+        delegate?.willSelectedItem(at: index)
+        itemLabels.forEach(unselectItem)
         let label       = itemLabels[index]
         label.font      = selectedTextFont
         label.textColor = selectedTextColor
@@ -215,8 +292,8 @@ final class OMTabIndicatorView: UIView {
                        usingSpringWithDamping: 0.9,
                        initialSpringVelocity: 0.8,
                        options: [.curveEaseOut],  animations: {
-                        self.selectionMarkerView.transform = CGAffineTransform.identity.concatenating(self.touchDownTransform)
-                        self.lineView.transform = CGAffineTransform.identity.concatenating(self.touchDownTransform)
+                        self.selectionMarker.transform = CGAffineTransform.identity.concatenating(self.touchDownTransform)
+                        self.selectionLine.transform = CGAffineTransform.identity.concatenating(self.touchDownTransform)
         }, completion: { complete in
             if complete {
                 UIView.animate(withDuration: 2.5,
@@ -224,8 +301,8 @@ final class OMTabIndicatorView: UIView {
                                usingSpringWithDamping: 0.9,
                                initialSpringVelocity: 0.8,
                                options: [.curveLinear],  animations: {
-                                self.selectionMarkerView.transform = CGAffineTransform.identity
-                                self.lineView.transform = CGAffineTransform.identity
+                                self.selectionMarker.transform = CGAffineTransform.identity
+                                self.selectionLine.transform = CGAffineTransform.identity
                 })
                 
             }
@@ -237,6 +314,8 @@ final class OMTabIndicatorView: UIView {
         print("selectedItem: \(index)")
         layoutIfNeeded()
         let targetLabel = itemLabels[index]
+        targetLabel.layer.borderColor = UIColor.black.cgColor
+        targetLabel.layer.borderWidth = 2
         // notify about the selection change
         willSelecteItemAtIndex(at: index)
         UIView.animate(withDuration: 0.5,
@@ -246,13 +325,13 @@ final class OMTabIndicatorView: UIView {
                        options: [.curveEaseIn],
                        animations: {
                         if self.isAnimatable {
-                            self.selectionMarkerView.layer.setAffineTransform(self.swearTransform.concatenating(self.touchUpTransform))
-                            self.lineView.layer.setAffineTransform(self.lineView.transform.concatenating(self.touchUpTransform))
+                            self.selectionMarker.layer.setAffineTransform(self.shearAffineTransform.concatenating(self.touchUpTransform))
+                            self.selectionLine.layer.setAffineTransform(self.selectionLine.transform.concatenating(self.touchUpTransform))
                         }
-                        self.selectionMarkerView.center = CGPoint(x: targetLabel.center.x,
-                                                                  y: self.selectionMarkerView.center.y)
-                        self.lineView.center = CGPoint(x: targetLabel.center.x,
-                                                       y: self.lineView.center.y)
+                        self.selectionMarker.center = CGPoint(x: targetLabel.center.x,
+                                                                  y: self.selectionMarker.center.y)
+                        self.selectionLine.center = CGPoint(x: targetLabel.center.x,
+                                                       y: self.selectionLine.center.y)
         }, completion: { complete in
             if complete {
                 if self.isAnimatable {
@@ -293,10 +372,12 @@ final class OMTabIndicatorView: UIView {
     //        })
     //        CATransaction.commit()
     //   }
-    private func resetFontOnLabel(_ label: UILabel) {
+    private func unselectItem(_ label: UILabel) {
         label.font = unselectedTextFont
         label.textColor = unselectedTextColor
         label.backgroundColor = .clear
+        label.layer.borderColor = UIColor.clear.cgColor
+        label.layer.borderWidth = 0
     }
     public func setItemSelected(_ index: Int) {
         guard items.count >= index else {
