@@ -204,7 +204,6 @@ final class OMTabIndicatorControl: UIControl {
         sendSubviewToBack(selectionLine)
         selectionLine.layer.backgroundColor = selectedLineColor.cgColor
         sendSubviewToBack(footerLine)
-        //footerLine.layer.backgroundColor = unselectedLineColor.withAlphaComponent(0.7).cgColor
         self.layoutIfNeeded()
         if isShadowImageSelectionMarker {
             let selectionMarkerHeight: CGFloat = selectionMarker.bounds.size.height - selectionLineMarkerHeight
