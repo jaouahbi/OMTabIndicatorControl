@@ -4,7 +4,7 @@
 # OMTabIndicatorControl
 
 
-![](https://github.com/jaouahbi/OMTabIndicatorView/blob/master/gif/gif.gif)
+![](https://github.com/jaouahbi/OMTabIndicatorControl/blob/master/gif/control.gif)
 
 ## Features
 
